@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "server/index.js", "use": "@vercel/node" }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "server/index.js" },
+    { "src": "/(.*)", "status": 404 }
+  ],
+  "env": {
+    "SESSION_SECRET": "@session_secret",
+    "PUBLIC_ORIGIN": "@public_origin",
+    "DISCORD_CLIENT_ID": "@discord_client_id",
+    "DISCORD_CLIENT_SECRET": "@discord_client_secret",
+    "DISCORD_REDIRECT_URI": "@discord_redirect_uri",
+    "DATABASE_PATH": "/tmp/nexora.sqlite",
+    "NODE_ENV": "production"
+  }
+}
