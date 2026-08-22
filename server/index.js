@@ -1,0 +1,24 @@
+import express from 'express';
+import session from 'express-session';
+import rateLimit from 'express-rate-limit';
+import crypto from 'node:crypto';
+import { env, discordConfigured, validateEnvironment } from './env.js';
+import { avatarUrl, exchangeCode, getBotGuild, getGuilds, getUser } from './discord.js';
+import { getGuildSettings, saveGuildSettings } from './db.js';
+
+validateEnvironment();
+const app = express();
+app.set('trust proxy', 1); app.use(express.json({ limit: '64kb' }));
+app.use(session({ name: 'nexora.sid', secret: env.sessionSecret || crypto.randomBytes(32).toString('hex'), resave: false, saveUninitialized: false, cookie: { httpOnly: true, sameSite: 'lax', secure: env.nodeEnv === 'production', maxAge: 86_400_000 } }));
+app.use('/api/', rateLimit({ windowMs: 60_000, limit: 100, standardHeaders: true, legacyHeaders: false }));
+const requireAuth = (req, res, next) => req.session.user ? next() : res.status(401).json({ error: 'Discord authentication is required.' });
+const requireGuildManager = async (req, res, next) => { try { const guilds = await getGuilds(req.session.accessToken); const guild = guilds.find((item) => item.id === req.params.guildId); if (!guild || !(Number(guild.permissions) & 0x20) && !guild.owner) return res.status(403).json({ error: 'You do not have Manage Server permission for this server.' }); req.guild = guild; next(); } catch (error) { res.status(502).json({ error: error.message }); } };
+app.get('/api/session', (req, res) => res.json(req.session.user ? { authenticated: true, configured: discordConfigured, user: req.session.user } : { authenticated: false, configured: discordConfigured }));
+app.get('/api/auth/login', (req, res) => { if (!discordConfigured) return res.status(503).json({ error: 'Discord OAuth is not configured on the backend.' }); const state = crypto.randomBytes(24).toString('hex'); req.session.oauthState = state; const params = new URLSearchParams({ client_id: env.clientId, response_type: 'code', redirect_uri: env.redirectUri, scope: 'identify guilds', state }); res.redirect(`https://discord.com/oauth2/authorize?${params}`); });
+app.get('/api/auth/callback', async (req, res) => { try { if (!req.query.code || !req.query.state || req.query.state !== req.session.oauthState) return res.status(400).send('Invalid OAuth state.'); const token = await exchangeCode(req.query.code); const user = await getUser(token.access_token); req.session.accessToken = token.access_token; req.session.user = { id: user.id, username: user.global_name || user.username, avatar: avatarUrl(user) }; delete req.session.oauthState; res.redirect(env.publicOrigin); } catch (error) { res.redirect(`${env.publicOrigin}?error=${encodeURIComponent(error.message)}`); } });
+app.get('/api/auth/logout', (req, res) => req.session.destroy(() => res.redirect(env.publicOrigin)));
+app.get('/api/servers', requireAuth, async (req, res) => { try { const guilds = await getGuilds(req.session.accessToken); const manageable = guilds.filter((guild) => guild.owner || (Number(guild.permissions) & 0x20)).map((guild) => ({ id: guild.id, name: guild.name, icon: guild.icon ? `https://cdn.discordapp.com/icons/${guild.id}/${guild.icon}.png?size=96` : null, permission: guild.owner ? 'owner' : 'manage' })); res.json({ servers: manageable }); } catch (error) { res.status(502).json({ error: error.message }); } });
+app.get('/api/guilds/:guildId/settings', requireAuth, requireGuildManager, (req, res) => res.json({ configured: Boolean(getGuildSettings(req.params.guildId)), settings: getGuildSettings(req.params.guildId) }));
+app.put('/api/guilds/:guildId/settings', requireAuth, requireGuildManager, (req, res) => { if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) return res.status(400).json({ error: 'Settings must be a JSON object.' }); res.json({ settings: saveGuildSettings(req.params.guildId, req.body) }); });
+app.get('/api/health', (_req, res) => res.json({ api: 'ok', discordConfigured, uptime: process.uptime() }));
+app.listen(env.port, () => console.log(`Nexora API listening on port ${env.port}`));

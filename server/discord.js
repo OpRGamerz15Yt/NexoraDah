@@ -1,0 +1,8 @@
+import { env } from './env.js';
+const discordApi = 'https://discord.com/api/v10';
+async function discord(path, options = {}) { const response = await fetch(`${discordApi}${path}`, { ...options, headers: { Authorization: `Bearer ${options.accessToken || ''}`, 'Content-Type': 'application/json', ...options.headers } }); const body = await response.json().catch(() => ({})); if (!response.ok) throw new Error(body.message || `Discord API returned ${response.status}`); return body; }
+export async function exchangeCode(code) { const response = await fetch(`${discordApi}/oauth2/token`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams({ client_id: env.clientId, client_secret: env.clientSecret, grant_type: 'authorization_code', code, redirect_uri: env.redirectUri }) }); const body = await response.json(); if (!response.ok) throw new Error(body.error_description || 'Discord OAuth exchange failed'); return body; }
+export const getUser = (token) => discord('/users/@me', { accessToken: token });
+export const getGuilds = (token) => discord('/users/@me/guilds', { accessToken: token });
+export async function getBotGuild(guildId) { if (!env.botToken) return null; const response = await fetch(`${discordApi}/guilds/${guildId}`, { headers: { Authorization: `Bot ${env.botToken}` } }); if (response.status === 404) return null; if (!response.ok) throw new Error(`Discord bot API returned ${response.status}`); return response.json(); }
+export function avatarUrl(user) { return user.avatar ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png?size=128` : null; }

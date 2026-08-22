@@ -1,0 +1,5 @@
+import 'dotenv/config';
+const required = ['SESSION_SECRET'];
+export const env = { port: Number(process.env.PORT || 3001), nodeEnv: process.env.NODE_ENV || 'development', sessionSecret: process.env.SESSION_SECRET || '', publicOrigin: process.env.PUBLIC_ORIGIN || 'http://localhost:5173', clientId: process.env.DISCORD_CLIENT_ID || '', clientSecret: process.env.DISCORD_CLIENT_SECRET || '', redirectUri: process.env.DISCORD_REDIRECT_URI || 'http://localhost:3001/api/auth/callback', botToken: process.env.DISCORD_BOT_TOKEN || '', databasePath: process.env.DATABASE_PATH || './data/nexora.sqlite', ownerIds: (process.env.OWNER_IDS || '').split(',').map((id) => id.trim()).filter(Boolean) };
+export const discordConfigured = Boolean(env.clientId && env.clientSecret && env.redirectUri);
+export function validateEnvironment() { const missing = required.filter((key) => !process.env[key]); if (missing.length) console.warn(`[config] Missing: ${missing.join(', ')}. Auth will remain disabled.`); }
