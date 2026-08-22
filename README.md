@@ -26,28 +26,39 @@ The frontend never contains a bot token, OAuth client secret, database password,
 **Test locally:**
 
 ```bash
-cp .env.example .env
+# .env file is already configured with your Discord credentials
 npm install
 npm run dev
 ```
 
-Visit `http://localhost:5173`. The API runs at `http://localhost:3001` and is auto-proxied. Without Discord credentials, the client intentionally shows the OAuth-not-configured state.
+Visit `http://localhost:5173` or `http://localhost:5174`. The API runs at `http://localhost:3001` and is auto-proxied. The login will show "Continue with Discord" since OAuth is configured.
 
 **Deploy to production:**
 
-1. **Frontend:** Already deployed to GitHub Pages at `https://oprGamerz15Yt.github.io/NexoraDah`
-2. **API:** Deploy to Vercel with one click:
+1. **Frontend:** Already deployed to GitHub Pages at `https://oprGamerz15Yt.github.io/NexoraDah` ✅
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/OpRGamerz15Yt/NexoraDah&env=SESSION_SECRET,PUBLIC_ORIGIN,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,DISCORD_REDIRECT_URI&envDescription=Discord%20OAuth%20credentials%20and%20session%20config&project-name=nexora-api)
+2. **API:** Deploy to Vercel:
 
-3. After Vercel deploys, get your API domain (e.g., `nexora-api.vercel.app`)
-4. Set the GitHub repository variable:
+   a. Go to [Vercel](https://vercel.com/new) and sign in with GitHub
+   
+   b. Import this repository and click "Deploy"
+   
+   c. In Environment Variables, add:
+      - `DISCORD_CLIENT_ID` = `1520326181025615892`
+      - `DISCORD_CLIENT_SECRET` = `GxPKhDO5Nj-JBnkW2gDZacU6hcI03cwi`
+      - `SESSION_SECRET` = `8f7c3289d6a7f7e659411f823d8deab38a7c3a8a797f3fbef3a4441b4bdad5ac`
+      - `PUBLIC_ORIGIN` = `https://oprGamerz15Yt.github.io/NexoraDah`
+      - `DISCORD_REDIRECT_URI` = `https://<your-vercel-domain>/api/auth/callback` (update after deployment)
+
+3. **Register Discord redirect URI:**
+   - Go to [Discord Developer Portal](https://discord.com/developers/applications) → Your App → OAuth2
+   - Add this under "Redirects": `https://<your-vercel-domain>/api/auth/callback`
+   - Replace `<your-vercel-domain>` with your actual Vercel domain
+
+4. **Connect frontend to API:**
    ```bash
-   gh repo variable set VITE_API_URL --body "https://nexora-api.vercel.app"
-   ```
-5. Push an empty commit to rebuild GitHub Pages:
-   ```bash
-   git commit --allow-empty -m "Rebuild with API" && git push
+   gh repo variable set VITE_API_URL --body "https://<your-vercel-domain>"
+   git commit --allow-empty -m "Connect to API" && git push
    ```
 
 ## Environment variables
