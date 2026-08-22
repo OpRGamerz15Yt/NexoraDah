@@ -1,21 +1,19 @@
-name: Deploy API to Vercel
+name: Tests
 
 on:
   push:
     branches: [main]
-  workflow_dispatch:
+  pull_request:
 
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
       - run: npm ci
       - run: npm test
-      - name: Deploy to Vercel
-        run: |
-          npm install -g vercel
-          vercel deploy --prod --token ${{ secrets.VERCEL_TOKEN }} --env DISCORD_CLIENT_ID=${{ vars.DISCORD_CLIENT_ID }} --env DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }} --env SESSION_SECRET=${{ secrets.SESSION_SECRET }} --env PUBLIC_ORIGIN=${{ vars.PUBLIC_ORIGIN }} --env DISCORD_REDIRECT_URI=${{ vars.DISCORD_REDIRECT_URI }}
+      - run: npm run build
