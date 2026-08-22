@@ -21,7 +21,9 @@ The frontend never contains a bot token, OAuth client secret, database password,
 - A publicly reachable Node API for production OAuth callbacks
 - A persistent filesystem or managed database for the API service
 
-## Local setup
+## Quick start
+
+**Test locally:**
 
 ```bash
 cp .env.example .env
@@ -29,7 +31,24 @@ npm install
 npm run dev
 ```
 
-The client runs at `http://localhost:5173` and the API at `http://localhost:3001`. Without Discord credentials, the client intentionally shows the OAuth-not-configured state.
+Visit `http://localhost:5173`. The API runs at `http://localhost:3001` and is auto-proxied. Without Discord credentials, the client intentionally shows the OAuth-not-configured state.
+
+**Deploy to production:**
+
+1. **Frontend:** Already deployed to GitHub Pages at `https://oprGamerz15Yt.github.io/NexoraDah`
+2. **API:** Deploy to Vercel with one click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/OpRGamerz15Yt/NexoraDah&env=SESSION_SECRET,PUBLIC_ORIGIN,DISCORD_CLIENT_ID,DISCORD_CLIENT_SECRET,DISCORD_REDIRECT_URI&envDescription=Discord%20OAuth%20credentials%20and%20session%20config&project-name=nexora-api)
+
+3. After Vercel deploys, get your API domain (e.g., `nexora-api.vercel.app`)
+4. Set the GitHub repository variable:
+   ```bash
+   gh repo variable set VITE_API_URL --body "https://nexora-api.vercel.app"
+   ```
+5. Push an empty commit to rebuild GitHub Pages:
+   ```bash
+   git commit --allow-empty -m "Rebuild with API" && git push
+   ```
 
 ## Environment variables
 
